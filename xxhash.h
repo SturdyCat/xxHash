@@ -5162,9 +5162,16 @@ extern "C"
         return h;
     }
 
-/* ================= 自定义 START ====================== */
+/* ================= 自定义 开始 ====================== */
 #include <stdio.h>
 #include <errno.h>
+
+/* MS Visual */
+#if defined(_MSC_VER) || defined(_WIN32)
+#  ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS   /* removes visual warnings */
+#  endif
+#endif
 
 /* ************************************
 *  Basic Types
@@ -5182,6 +5189,20 @@ extern "C"
 #define MB *(1 << 20)
 #define GB *(1U << 30)
 
+#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
+#  include <fcntl.h>   /* _O_BINARY */
+#  include <io.h>      /* _setmode, _fileno, _get_osfhandle */
+#  if !defined(__DJGPP__)
+#    include <windows.h> /* DeviceIoControl, HANDLE, FSCTL_SET_SPARSE */
+#    include <winioctl.h> /* FSCTL_SET_SPARSE */
+#    define SET_BINARY_MODE(file) { int const unused=_setmode(_fileno(file), _O_BINARY); (void)unused; }
+#  else
+#    define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+#  endif
+#else
+#  define SET_BINARY_MODE(file)
+#endif
+
 /* ************************************
  *  Display macros
  **************************************/
@@ -5193,7 +5214,7 @@ extern "C"
 
 /* Unicode helpers for Windows to make UTF-8 act as it should. */
 #ifdef _WIN32
-    /*
+/*
  * Converts a UTF-8 string to UTF-16. Acts like strdup. The string must be freed afterwards.
  * This version allows keeping the output length.
  */
@@ -5444,7 +5465,7 @@ extern "C"
         }
     }
 
-    /*
+/*
  * XSUM_hashStream:
  * Reads data from `inFile`, generating an incremental hash of type hashType,
  * using `buffer` of size `blockSize` for temporary storage.
@@ -5518,7 +5539,7 @@ extern "C"
         BMK_display_BigEndian(&hcbe128, hashVal, 16);
     }
 
-/* ================= 自定义 END ====================== */
+/* ================= 自定义 结束 ====================== */
 
 /* Pop our optimization override from above */
 #if XXH_VECTOR == XXH_AVX2                                  /* AVX2 */           \
